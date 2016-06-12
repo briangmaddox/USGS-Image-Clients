@@ -1,0 +1,86 @@
+
+prefix		=	/home/bmaddox
+exec_prefix	=	${prefix}
+host_os		=	linux
+srcdir		=	.
+top_srcdir	=	.
+gen_depend	=	no
+enable_debug	=	no
+enable_purify	=	no
+
+# Where to find our own image headers.
+IMAGEHEADERS= ..
+
+# Where to find includes for libraries that Image depends on.
+INCPATHS = -I$(prefix)/include 
+
+ifeq ($(host_os), linux)
+LIBDIRS = -L$(prefix)/lib
+else
+LIBDIRS = -L$(prefix)/lib/dgux
+endif
+
+LIBS = -lImage -lgeotiff -ltiff -lpng -ljpeg -lz -lm 
+#-lFrodo 
+#-lg++
+
+LDFLAGS= $(LIBDIRS) 
+LOADLIBES= $(LIBS)
+
+# Where to install the executables.
+ifeq ($(prefix),$(exec_prefix))
+BINDEST = $(prefix)/bin
+else
+BINDEST = $(exec_prefix)
+endif
+
+ifeq ($(enable_debug),yes)
+DEBUG= -g
+else
+DEBUG= -O2 -mpentium
+endif
+
+ifeq ($(enable_purify),yes)
+PURIFY= purify
+else
+PURIFY=
+endif
+
+CC=$(PURIFY) gcc
+CXX=$(PURIFY) g++
+CXXFLAGS= $(DEBUG) $(INCPATHS)
+RANLIB=ranlib
+
+INSTALLFILE = $(top_srcdir)/config/install-sh -c
+INSTALLDIR  = $(top_srcdir)/config/install-sh -d
+
+UTILS= crl2dgp crl2tiff crlinfo denoise descreen dgp2tiff dgpinfo  \
+pb2lzw pb2none pullcrlrect rgb2dgp rgb2tiff stats tiff2dgp \
+tiff2rgb tiffpullrect tiffremap tiffmap tiffrot tiff4to8 tiff2gtiff \
+tiffresample grey2tiff checkcmap dgp2gtif rgb2tiffq newtiffresample \
+dgp2usgsdrg tif2usgsdrg doq2tiff checktiff
+
+
+all: utils installbin
+
+utils: $(UTILS)
+
+installbin:
+	@for filen in $(UTILS) ; do \
+	   if test -f $(BINDEST)/$${filen} ;\
+	   then \
+	      echo "Replacing $(BINDEST)/$${filen}"; \
+	      rm -rf $(BINDEST)/$${filen}; \
+	   else \
+	      echo "Installing $(BINDEST)/$${filen}"; \
+	   fi ; \
+	$(INSTALLFILE) $${filen} $(BINDEST)/$${filen}; \
+	done
+
+clean::
+	rm -f $(OBJS) *.a core $(UTILS)
+
+realclean: 
+	rm -rf *.d config.cache config.status config.log
+
+
